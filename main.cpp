@@ -22,20 +22,20 @@ using namespace std;
 int main()
 {
     // ouvrir le fichier
-    string fileName = "/home/fred/workspace/zfred_sendfileSocketClient/hulk.jpg";
-    int fileDesc = open(fileName.c_str(), O_RDONLY);
+    string fullFileName = "/home/fred/workspace/zfred_sendfileSocketClient/hulk.jpg";
+    string fileName = "hulk.jpg";
+    int fileDesc = open(fullFileName.c_str(), O_RDONLY);
     if(fileDesc == -1) {
         cout << "file do not exist" << endl;
         exit(EXIT_FAILURE);
     }
     
     struct stat fileStat;
-    if (stat(fileName.c_str(), &fileStat) == -1) {
+    if (stat(fullFileName.c_str(), &fileStat) == -1) {
         cout << "file stat error" << endl;
         exit(EXIT_FAILURE);
     }
     cout << "file size = " << fileStat.st_size << endl;
-
     // ouvrir la socket
     struct sockaddr_in addr;
     /* set up destination address */
@@ -56,11 +56,12 @@ int main()
         exit(EXIT_FAILURE);
     }
     // send name
-    send(socketFD, "azertyuio", 3, 0);
+    send(socketFD, fileName.c_str(), fileName.length(), 0);
     // sendfile
     ssize_t l = sendfile(socketFD, fileDesc, NULL, fileStat.st_size);
 
-    cout << "Hello World! " << endl;
+    close(socketFD);
+    cout << "Hello World! : send : "<< l << endl;
     return 0;
 }
 
