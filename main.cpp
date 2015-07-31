@@ -12,10 +12,15 @@
 #include <arpa/inet.h>
 
 #include <string.h>
+#include <unistd.h>
+
+#include <cstdint> // pour int32_t
+#include "socket_messages.h"
 
 using namespace std;
 
 // decouvrir l'IP serveur... broadcast ou multicast
+//#define HELLO_GROUP "192.168.1.116"
 #define HELLO_GROUP "127.0.0.1"
 #define HELLO_PORT 12345
 
@@ -55,13 +60,34 @@ int main()
         cout << "error connect" << endl;
         exit(EXIT_FAILURE);
     }
-    // send name
-    send(socketFD, fileName.c_str(), fileName.length(), 0);
-    // sendfile
-    ssize_t l = sendfile(socketFD, fileDesc, NULL, fileStat.st_size);
+    //- send name
+    //-- file name length preliminary
+    uint32_t t = ns_socket::STRING_LENGTH;
+    send(socketFD, &t,
+         sizeof(ns_socket::SOCK_MSG_TYPE), 0);
 
+    //-- file name length
+    uint32_t nameLength = fileName.length();
+    send(socketFD, &nameLength, sizeof(uint32_t), 0);
+    //-- file name
+    send(socketFD, fileName.c_str(), fileName.length(), 0);
+
+    //- sendfile
+    //-- sendfile length preliminary
+    t = ns_socket::FILE_LENGTH;
+    send(socketFD, &t, sizeof(ns_socket::SOCK_MSG_TYPE), 0);
+
+    //-- sendfile length
+    uint32_t fileLength = fileStat.st_size;
+    send(socketFD, &fileLength, sizeof(uint32_t), 0);
+
+    //-- sendfile
+    ssize_t l = sendfile(socketFD, fileDesc, NULL, fileStat.st_size);
+    usleep(200);
+    string endC = "CLOSE_SOCKET";
+    int l0 = send(socketFD, endC.c_str(), endC.length(), 0);
     close(socketFD);
-    cout << "Hello World! : send : "<< l << endl;
+    cout << "Hello World! : send : "<< l0 << endl;
     return 0;
 }
 
